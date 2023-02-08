@@ -16,7 +16,7 @@ function App() {
     setAzureApiKey(localStorage.getItem("azureApiKey"));
     setAzureApiRegion(localStorage.getItem("azureApiRegion"));
     setRecognition(localStorage.getItem("recognition"));
-    
+
   }, []);
 
   useEffect(() => {
@@ -171,6 +171,7 @@ function App() {
               className="btn"
               onClick={() => {
                 saveApiConfig();
+                CheckApiConfig();
               }}>
               Save
             </label>
@@ -187,8 +188,8 @@ function App() {
       localStorage.setItem("azureApiKey", azureApiKey);
       localStorage.setItem("azureApiRegion", azureApiRegion);
       toast.success("Save Successfully");
-      CheckApiConfig();
-    } catch (error) {}
+
+    } catch (error) { }
   };
 
   const CheckApiConfig = () => {
@@ -203,14 +204,14 @@ function App() {
 
   const StartContainer = (
     <body className="flex items-center justify-center h-[200px] bg-gray-400">
-      
+
       {StartBottom}
     </body>
   );
 
   const ChatContainer = (
     <body className=" bg-gray-400">
-      <Dictaphone openAiApiKey={{openAiApiKey}} azureApiKey={{azureApiKey}} azureApiRegion={{azureApiRegion}} recognitionType={{recognition}} />
+      <Dictaphone openAiApiKey={{ openAiApiKey }} azureApiKey={{ azureApiKey }} azureApiRegion={{ azureApiRegion }} recognitionType={{ recognition }} />
     </body>
   );
 

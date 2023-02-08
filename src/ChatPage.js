@@ -20,33 +20,48 @@ import { toast } from "react-hot-toast";
 
 const Dictaphone1 = (props) => {
   const recognitionType = props.recognitionType;
-  const azureApiKey = props.azureApiKey;
-  const azureApiRegion = props.azureApiRegion;
-  const openAiApiKey = props.openAiApiKey;
+
+  const azureApiKey = props.azureApiKey.azureApiKey;
+  const azureApiRegion = props.azureApiRegion.azureApiRegion;
+  const openAiApiKey = props.openAiApiKey.openAiApiKey;
+  console.log("get open api key:", openAiApiKey)
   const configuration = new Configuration({
     // apiKey: "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",
     apiKey: openAiApiKey,
   });
   const openai = new OpenAIApi(configuration);
 
-  if (!openAiApiKey){
+  if (!openAiApiKey) {
     toast.error("OpenAI Api Key is required");
-  }else{
+  } else {
   }
 
   const { SpeechRecognition: AzureSpeechRecognition } =
-  createSpeechServicesPonyfill({
-    credentials: {
-      region: azureApiRegion,
-      subscriptionKey: azureApiKey,
-    },
+    createSpeechServicesPonyfill({
+      credentials: {
+        region: azureApiRegion,
+        subscriptionKey: azureApiKey,
+      },
+    });
+
+  recognitionType == 'azure' && SpeechRecognition.applyPolyfill(AzureSpeechRecognition);
+
+  const onBoundary = (event) => {
+    console.log(`${event.name} boundary reached after ${event.elapsedTime} milliseconds.`);
+  };
+  const onEnd = () => {
+    listenContinuously();
+    console.log("speak ended")
+  }
+  const onError = (event) => {
+    console.warn(event);
+  };
+
+  const { cancel, speak, speaking, supported, voices, pause, resume } = useSpeechSynthesis({
+    onEnd,
+    onBoundary,
+    onError,
   });
-
-  recognitionType=='azure'&&SpeechRecognition.applyPolyfill(AzureSpeechRecognition);
-
-  const [message, setMessage] = useState("");
-  const { speak } = useSpeechSynthesis();
-  const [reply, setReply] = useState("");
   const [promptTemp, setPromptTemp] = useState(
     "The following is a conversation with an AI assistant.The assistant is helpful, creative, clever, and very friendly.\n\n"
   );
@@ -78,6 +93,12 @@ const Dictaphone1 = (props) => {
       "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\n"
     );
   };
+  const listenContinuously = () => {
+    SpeechRecognition.startListening({
+      continuous: true,
+      language: "en-GB",
+    });
+  };
 
   const askGPT = async () => {
     const completion = await openai.createCompletion({
@@ -91,26 +112,33 @@ const Dictaphone1 = (props) => {
       stop: [" Human:", " AI:"],
     });
 
-    console.log(completion.data);
-    setReply(completion.data.choices[0].text);
     setPromptTemp(
       promptTemp +
-        `Human: ${finalTranscript}\n` +
-        `${completion.data.choices[0].text}\n`
+      `Human: ${finalTranscript}\n` +
+      `${completion.data.choices[0].text}\n`
     );
+
+    SpeechRecognition.stopListening();
+    resetTranscript();
+    console.log(completion.data.choices[0].text
+      .replace("AI Assistant:", "")
+      .replace("AI", "")
+      .replace("AI Assistant:", ""))
     speak({
       text: completion.data.choices[0].text
-        .replace("AI assistant:", "")
+        .replace("assistant:", "")
         .replace("AI", "")
-        .replace("AI Assistant:", ""),
-    });
-    resetTranscript();
+        .replace("Assistant:", ""),
+
+    })
+
+
   };
   useEffect(() => {
     if (finalTranscript !== "") {
       console.log("Got final result:", finalTranscript);
       console.log(interimTranscript);
-      //   askGPT()
+      // askGPT()
     }
   }, [interimTranscript, finalTranscript]);
   //   if (!SpeechRecognition.browserSupportsSpeechRecognition()) {
@@ -121,12 +149,7 @@ const Dictaphone1 = (props) => {
       "Your browser does not support speech recognition software! Try Chrome desktop, maybe?"
     );
   }
-  const listenContinuously = () => {
-    SpeechRecognition.startListening({
-      continuous: true,
-      language: "zh-CN",
-    });
-  };
+
 
   const ChatDisplay = () => (
     <div>
@@ -139,9 +162,53 @@ const Dictaphone1 = (props) => {
     </div>
   );
 
-  return (
-    <div className="bg-white w-screen h-[500px]">
+  const ChatHistory = (
+    <div className="bg-gray-200 w-auto h-[100vh] overflow-y-auto" >
+      {promptTemp.split("\n").map((line, index) => line.includes("Human:") ? (
+        <div className="flex justify-end">
+          <p className="bg-green-400 p-4 m-4 rounded-xl">
+            {line.replace("Human:", "")}
+          </p>
+
+        </div>
+      ) : line.includes("AI Assistant:") ? (
+        <div className="flex justify-start">
+          <p className="bg-white p-4 mr-10 m-4 rounded-xl">
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+            {line.replace("AI Assistant:", "")}
+          </p>
+
+        </div>
+      ) : (
+        <div></div>
+      ))}
+    </div>
+
+  )
+
+  const InputWindow = (
+    <div className="w-full h-[60px] bg-pink-300 absolute bottom-0">
       <div>
+
+      </div>
+    </div>
+  )
+
+
+  return (
+    <div className="w-full h-full">
+
+      {ChatHistory}
+      {InputWindow}
+      {/* <div>
 
         <span>listening: {listening ? "on" : "off"}</span>
         <div>
@@ -154,18 +221,21 @@ const Dictaphone1 = (props) => {
           <button type="button" onClick={SpeechRecognition.stopListening}>
             Stop
           </button>
-          <button type="button" onClick={askGPT}>
+          <button type="button" onClick={() => {
+            askGPT()
+
+          }}>
             send
           </button>
         </div>
-      </div>
+      </div> */}
       {/* <div>{message}</div>
        */}
 
-      {ChatDisplay()}
+      {/* {ChatDisplay()}
       <div>
         <span>{transcript}</span>
-      </div>
+      </div> */}
     </div>
   );
 };
