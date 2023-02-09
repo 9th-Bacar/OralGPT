@@ -210,19 +210,19 @@ function App() {
   );
 
   const ChatContainer = (
-    <body className=" bg-gray-400">
+    <body className=" bg-gray-400 flex-grow flex">
       <Dictaphone openAiApiKey={{ openAiApiKey }} azureApiKey={{ azureApiKey }} azureApiRegion={{ azureApiRegion }} recognitionType={{ recognition }} />
     </body>
   );
 
   return (
-    <div className="h-screen bg-gray-200 ">
+    <div className="h-screen bg-gray-200 flex flex-col">
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <Dictaphone />
       </header> */}
       <Headers />
-      <span className="">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</span>
+      {/* <span className="">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</span> */}
       {!goodToStart ? StartContainer : ChatContainer}
       {StartModal}
     </div>
