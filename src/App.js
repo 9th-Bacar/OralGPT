@@ -4,6 +4,7 @@ import "./App.css";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 function App() {
+  const screenWidth = window.innerWidth;
   const [recognition, setRecognition] = useState("browser");
   const [goodToStart, setGoodToStart] = useState(false);
   const [azureApiKey, setAzureApiKey] = useState("");
@@ -210,13 +211,13 @@ function App() {
   );
 
   const ChatContainer = (
-    <body className=" bg-gray-400 flex-grow flex">
+    <body className="bg-gray-400 flex-grow">
       <Dictaphone openAiApiKey={{ openAiApiKey }} azureApiKey={{ azureApiKey }} azureApiRegion={{ azureApiRegion }} recognitionType={{ recognition }} />
     </body>
   );
 
   return (
-    <div className="h-screen bg-gray-200 flex flex-col">
+    <div className="h-screen max-h-screen min-w-[300px] bg-gray-200 flex flex-col">
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <Dictaphone />
