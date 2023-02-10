@@ -6,7 +6,12 @@ import SpeechRecognition, {
 import { Configuration, OpenAIApi } from "openai";
 import { useSpeechSynthesis } from "react-speech-kit";
 import { toast } from "react-hot-toast";
-import { SpeakerWaveIcon, PaperAirplaneIcon } from "@heroicons/react/24/solid";
+import {
+  SpeakerWaveIcon,
+  PaperAirplaneIcon,
+  MicrophoneIcon,
+  ChatBubbleLeftEllipsisIcon,
+} from "@heroicons/react/24/solid";
 
 // import sdk from 'microsoft-cognitiveservices-speech-sdk'
 // import Buffer from 'buffer'
@@ -17,24 +22,26 @@ import { SpeakerWaveIcon, PaperAirplaneIcon } from "@heroicons/react/24/solid";
 // const REGION = "southeastasia";
 
 const Dictaphone1 = (props) => {
-  const screenHeight = window.innerHeight;
-
+//   const screenHeight = window.innerHeight;
+  const [screenHeight,setScreenHeight] = useState(window.innerHeight);
+  useEffect(() => {
+    setScreenHeight(window.innerHeight);
+  })
   const recognitionType = props.recognitionType;
-  const [textToSend, setTextToSend] = useState('')
-  const [inputType, setInputType] = useState('text')
-  const [continuousTalk, setContinuousTalk] = useState(false)
+  const [textToSend, setTextToSend] = useState("");
+  const [inputType, setInputType] = useState("text");
+  const [continuousTalk, setContinuousTalk] = useState(false);
   const azureApiKey = props.azureApiKey.azureApiKey;
   const azureApiRegion = props.azureApiRegion.azureApiRegion;
   const openAiApiKey = props.openAiApiKey.openAiApiKey;
-  const [textToSpeak, setTextToSpeak] = useState('')
-  const [prettyTalk, setPrettyTalk] = useState([])
+  const [textToSpeak, setTextToSpeak] = useState("");
+  const [prettyTalk, setPrettyTalk] = useState([]);
   console.log("get open api key:", openAiApiKey);
   const configuration = new Configuration({
     // apiKey: "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",
     apiKey: openAiApiKey,
   });
   const openai = new OpenAIApi(configuration);
-
 
   function extractDialogue(conversation) {
     const lines = conversation.split("\n");
@@ -76,7 +83,7 @@ const Dictaphone1 = (props) => {
   const onEnd = () => {
     continuousTalk && listenContinuously();
     console.log("speak ended");
-    setTextToSpeak('')
+    setTextToSpeak("");
   };
   const onError = (event) => {
     console.warn(event);
@@ -90,12 +97,15 @@ const Dictaphone1 = (props) => {
     });
 
   useEffect(() => {
-    textToSpeak && cancel()
+    // toast(textToSpeak)
+    textToSpeak && cancel();
     textToSpeak && SpeechRecognition.stopListening();
-    textToSpeak && speak({
-      text: textToSpeak
-    });
-  }, [textToSpeak])
+    textToSpeak &&
+      speak({
+        text: textToSpeak,
+      });
+
+  }, [textToSpeak]);
 
   const [promptTemp, setPromptTemp] = useState(
     "The following is a conversation with an AI assistant.The assistant is helpful, creative, clever, and very friendly.\n\n"
@@ -105,10 +115,10 @@ const Dictaphone1 = (props) => {
       command: "reset",
       callback: () => resetTranscript(),
     },
-    // {
-    //   command: "shut up",
-    //   callback: () => setMessage("I wasn't talking."),
-    // },
+    {
+      command: "hello",
+      callback: () => toast("ok?"),
+    },
     // {
     //   command: "Hello",
     //   callback: () => setMessage("Hi there!"),
@@ -130,8 +140,8 @@ const Dictaphone1 = (props) => {
   };
   const listenContinuously = () => {
     SpeechRecognition.startListening({
-      continuous: true,
-      language: "en-GB",
+      continuous: false,
+      language: "zh-CN",
     });
   };
 
@@ -149,11 +159,11 @@ const Dictaphone1 = (props) => {
 
     setPromptTemp(
       promptTemp +
-      `Human: ${finalTranscript}\n` +
-      `${completion.data.choices[0].text}\n`
+        `Human: ${finalTranscript}\n` +
+        `${completion.data.choices[0].text}\n`
     );
 
-    SpeechRecognition.stopListening();
+    // SpeechRecognition.stopListening();
     resetTranscript();
     console.log(
       completion.data.choices[0].text
@@ -183,25 +193,28 @@ const Dictaphone1 = (props) => {
 
     setPromptTemp(
       promptTemp +
-      `Human:${textToSend}\n` +
-      `${completion.data.choices[0].text}\n`
+        `Human:${textToSend}\n` +
+        `${completion.data.choices[0].text}\n`
     );
     setTextToSend("");
-    setTextToSpeak(completion.data.choices[0].text.replace("AI Assistant:", ""));
-
+    setTextToSpeak(
+      completion.data.choices[0].text.replace("AI Assistant:", "")
+    );
   };
   useEffect(() => {
+    toast(interimTranscript)
+    toast("final:"+finalTranscript)
     if (finalTranscript !== "") {
       console.log("Got final result:", finalTranscript);
-      console.log(interimTranscript);
-      // askGPT()
+
+
     }
   }, [interimTranscript, finalTranscript]);
 
   useEffect(() => {
-    setPrettyTalk(extractDialogue(promptTemp))
-    console.log(extractDialogue(promptTemp))
-  }, [promptTemp])
+    setPrettyTalk(extractDialogue(promptTemp));
+    console.log(extractDialogue(promptTemp));
+  }, [promptTemp]);
   //   if (!SpeechRecognition.browserSupportsSpeechRecognition()) {
   //       return null;
   //   }
@@ -223,20 +236,27 @@ const Dictaphone1 = (props) => {
   );
 
   const ChatHistory = (
-    <div className="bg-gray-200 w-full  overflow-y-scroll" style={{ height: screenHeight - 124 }}>
-      {/* <p>{prettyTalk}</p> */}
+    <div
+      className="bg-gray-200 w-full  overflow-y-scroll"
+      style={{ height: screenHeight - 124 }}>
+      <p>{listening?"listening":"not listening"}</p>
       {prettyTalk.map((item, index) =>
         item.Speaker == "Human" ? (
-          <div className="flex justify-end" onClick={() => { setTextToSpeak(item.speech) }}>
-            <p className="bg-green-400 p-4 m-4 rounded-xl">
-              {item.Speech}
-            </p>
+          <div
+            className="flex justify-end"
+            onClick={() => {
+              setTextToSpeak(item.Speech);
+              
+            }}>
+            <p className="bg-green-400 p-4 m-4 rounded-xl">{item.Speech}</p>
           </div>
         ) : (
-          <div className="flex justify-start" onClick={() => { setTextToSpeak(item.speech) }}>
-            <p className="bg-white p-4 mr-10 m-4 rounded-xl">
-              {item.Speech}
-            </p>
+          <div
+            className="flex justify-start"
+            onClick={() => {
+              setTextToSpeak(item.Speech);
+            }}>
+            <p className="bg-white p-4 mr-10 m-4 rounded-xl">{item.Speech}</p>
           </div>
         )
       )}
@@ -244,29 +264,70 @@ const Dictaphone1 = (props) => {
   );
 
   const InputWindow = (
-    <div className="w-full h-[60px] bg-pink-300 flex flex-row">
-      <div className="bg-green-500 w-[60px] h-full justify-center">
-        <SpeakerWaveIcon className="text-white h-10 " />
+    <div className="w-full h-[60px] bg-gray-200 flex flex-row">
+      <div
+        className="bg-green-500 w-[60px] h-full flex justify-center items-center  rounded-lg"
+        onClick={() => {
+          setInputType("speak");
+        }}>
+        <MicrophoneIcon className="text-white h-10 " />
       </div>
-      <div className="bg-red-100 flex-grow h-full flex justify-center items-center p-2">
+      <div className="bg-gray-200 flex-grow h-full flex justify-center items-center p-2">
         <input
           type="text"
-          placeholder="Type here"
+          hover="Type here"
           className="input input-bordered w-full flex-grow"
           value={textToSend}
-          onChange={(e) => { setTextToSend(e.target.value) }}
+          onChange={(e) => {
+            setTextToSend(e.target.value);
+          }}
         />
       </div>
-      <div className="bg-green-500 w-[60px] h-full" onClick={() => { askGptText() }}>
-        <PaperAirplaneIcon />
+      <div
+        className="bg-green-500 w-[60px] h-full  flex justify-center items-center  rounded-lg"
+        onClick={() => {
+          askGptText();
+        }}>
+        <PaperAirplaneIcon className="text-white h-10 " />
       </div>
     </div>
   );
 
+  const SpeakWindow = (
+    <div className="w-full bg-gray-200 h-[60px] flex flex-row">
+      <div
+        className="bg-green-500 w-[60px] h-full flex justify-center items-center rounded-lg"
+        onClick={() => {
+          setInputType("text");
+        }}>
+        <ChatBubbleLeftEllipsisIcon className="text-white h-10 " />
+      </div>
+      <div className="flex-grow h-full flex justify-center items-center p-2">
+        <button
+          className="btn btn-wide h-[60px]] bg-green-500 border-green-500 text-white"
+          onClick={() => {
+            toast('listening');
+            console.log("on press");
+            !listening?listenContinuously():SpeechRecognition.stopListening()
+          }}
+         >
+          Speak
+        </button>
+      </div>
+      {/* <div
+        className="bg-green-500 w-[60px] h-full  flex justify-center items-center  rounded-lg"
+        onClick={() => {
+          askGptText();
+        }}>
+        <PaperAirplaneIcon className="text-white h-10 " />
+      </div> */}
+    </div>
+  );
+
   return (
-    <div className="w-full " style={{ height: screenHeight - 64 }}>
+    <div className="w-full " style={{ height: screenHeight - 64 }} onClick={()=>{console.log('')}}>
       {ChatHistory}
-      {InputWindow}
+      {inputType == "text" ? InputWindow : SpeakWindow}
       {/* <div>
 
         <span>listening: {listening ? "on" : "off"}</span>
